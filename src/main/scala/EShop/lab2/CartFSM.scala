@@ -1,5 +1,6 @@
 package EShop.lab2
 
+import EShop.lab2.CartActor._
 import EShop.lab2.CartFSM.Status
 import akka.actor.{LoggingFSM, Props}
 
@@ -27,15 +28,37 @@ class CartFSM extends LoggingFSM[Status.Value, Cart] {
   startWith(Empty, Cart.empty)
 
   when(Empty) {
-    ???
+    case Event(AddItem(item), cart) =>
+      goto(NonEmpty).using(cart.addItem(item))
   }
 
   when(NonEmpty, stateTimeout = cartTimerDuration) {
-    ???
+    case Event(RemoveItem(item), cart) =>
+      if (cart.contains(item)) {
+        val newCart = cart.removeItem(item)
+        if (newCart.size != 0)
+          stay.using(newCart)
+        else
+          goto(Empty).using(newCart)
+      } else {
+        stay.using(cart)
+      }
+
+    case Event(AddItem(item), cart) =>
+      stay.using(cart.addItem(item))
+
+    case Event(StartCheckout, cart) =>
+      goto(InCheckout).using(cart)
+
+    case Event(StateTimeout, _) =>
+      goto(Empty).using(Cart.empty)
   }
 
   when(InCheckout) {
-    ???
-  }
+    case Event(CancelCheckout, cart) =>
+      goto(NonEmpty).using(cart)
 
+    case Event(CloseCheckout, _) =>
+      goto(Empty).using(Cart.empty)
+  }
 }
