@@ -42,54 +42,66 @@ class Checkout extends Actor {
 
   def receive: Receive = LoggingReceive {
     case StartCheckout =>
+      log.debug("Starting checkout (becoming selectingDelivery)")
       context become selectingDelivery(scheduler.scheduleOnce(checkoutTimerDuration, self, ExpireCheckout))
   }
 
   def selectingDelivery(timer: Cancellable): Receive = LoggingReceive {
     case SelectDeliveryMethod(method) =>
+      log.debug("Delivery method selected - " + method + "(becoming selectingPaymentMethod)")
       context become selectingPaymentMethod(timer)
 
     case CancelCheckout =>
       timer.cancel()
+      log.debug("Canceling checkout (becoming cancelled)")
       context become cancelled
 
     case ExpireCheckout =>
+      log.debug("Expiring checkout (becoming cancelled)")
       context become cancelled
   }
 
   def selectingPaymentMethod(timer: Cancellable): Receive = LoggingReceive {
     case SelectPayment(payment) =>
       timer.cancel()
+      log.debug("Payment selected - " + payment + "(becoming processingPayment)")
       context become processingPayment(scheduler.scheduleOnce(paymentTimerDuration, self, ExpirePayment))
 
     case CancelCheckout =>
       timer.cancel()
+      log.debug("Canceling checkout (becoming cancelled)")
       context become cancelled
 
     case ExpireCheckout =>
+      log.debug("Expiring checkout (becoming cancelled)")
       context become cancelled
   }
 
   def processingPayment(timer: Cancellable): Receive = LoggingReceive {
     case ReceivePayment =>
       timer.cancel()
+      log.debug("Payment received (becoming closed)")
       context become closed
 
     case CancelCheckout =>
       timer.cancel()
+      log.debug("Canceling checkout (becoming cancelled)")
       context become cancelled
 
     case ExpirePayment =>
+      log.debug("Expiring payment (becoming cancelled)")
       context become cancelled
   }
 
   def cancelled: Receive = LoggingReceive {
     case StartCheckout =>
-      selectingDelivery(scheduler.scheduleOnce(checkoutTimerDuration, self, ExpireCheckout))
+      log.debug("Starting checkout (becoming selectingDelivery)")
+      context become selectingDelivery(scheduler.scheduleOnce(checkoutTimerDuration, self, ExpireCheckout))
   }
 
   def closed: Receive = LoggingReceive {
     case StartCheckout =>
-      selectingDelivery(scheduler.scheduleOnce(checkoutTimerDuration, self, ExpireCheckout))
+      log.debug("Starting checkout (becoming selectingDelivery)")
+      context become selectingDelivery(scheduler.scheduleOnce(checkoutTimerDuration, self, ExpireCheckout))
   }
 }
