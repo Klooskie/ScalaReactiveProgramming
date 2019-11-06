@@ -1,7 +1,6 @@
 package EShop.lab2
 
-import EShop.lab3.OrderManager
-import akka.actor.{Actor, ActorRef, Cancellable, Props, Timers}
+import akka.actor.{Actor, ActorRef, Cancellable, Props}
 import akka.event.{Logging, LoggingReceive}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -28,13 +27,6 @@ object CartActor {
 class CartActor extends Actor {
 
   import CartActor._
-
-  var checkoutActor: ActorRef = _
-
-  override def preStart(): Unit = {
-    super.preStart()
-    checkoutActor = context.system.actorOf(Checkout.props(self))
-  }
 
   private val log = Logging(context.system, this)
   val cartTimerDuration = 5 seconds
@@ -76,6 +68,7 @@ class CartActor extends Actor {
     case StartCheckout =>
       timer.cancel()
       log.debug("Starting checkout (becoming inCheckout)")
+      val checkoutActor = context.system.actorOf(Checkout.props(self))
       checkoutActor ! Checkout.StartCheckout
       sender() ! CheckoutStarted(checkoutActor)
       context become inCheckout(cart)
@@ -91,7 +84,6 @@ class CartActor extends Actor {
   def inCheckout(cart: Cart): Receive = LoggingReceive {
     case CancelCheckout =>
       log.debug("Canceling checkout (becoming nonEmpty)")
-      checkoutActor ! Checkout.CancelCheckout
       context become nonEmpty(cart, scheduleTimer)
 
     case CloseCheckout =>
