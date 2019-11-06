@@ -1,5 +1,6 @@
 package EShop.lab2
 
+import EShop.lab3.OrderManager
 import akka.actor.{Actor, ActorRef, Cancellable, Props, Timers}
 import akka.event.{Logging, LoggingReceive}
 
@@ -10,9 +11,8 @@ import scala.language.postfixOps
 object CartActor {
 
   sealed trait Command
-  case class AddItem(item: Any) extends Command
+  case class AddItem(item: Any)    extends Command
   case class RemoveItem(item: Any) extends Command
-
   case object ExpireCart           extends Command
   case object StartCheckout        extends Command
   case object CancelCheckout       extends Command
@@ -29,6 +29,13 @@ class CartActor extends Actor {
 
   import CartActor._
 
+  var checkoutActor: ActorRef = _
+
+  override def preStart(): Unit = {
+    super.preStart()
+    checkoutActor = context.system.actorOf(Checkout.props(self))
+  }
+
   private val log = Logging(context.system, this)
   val cartTimerDuration = 5 seconds
 
@@ -40,6 +47,9 @@ class CartActor extends Actor {
     case AddItem(item) =>
       log.debug("Item " + item + " added to the cart (becoming nonEmpty)")
       context become nonEmpty(Cart.empty.addItem(item), scheduleTimer)
+
+    case GetItems =>
+      sender() ! Seq.empty[Any]
   }
 
   def nonEmpty(cart: Cart, timer: Cancellable): Receive = LoggingReceive {
@@ -66,16 +76,22 @@ class CartActor extends Actor {
     case StartCheckout =>
       timer.cancel()
       log.debug("Starting checkout (becoming inCheckout)")
+      checkoutActor ! Checkout.StartCheckout
+      sender() ! CheckoutStarted(checkoutActor)
       context become inCheckout(cart)
 
     case ExpireCart =>
       log.debug("Time out (becoming empty)")
       context become empty
+
+    case GetItems =>
+      sender() ! cart.items
   }
 
   def inCheckout(cart: Cart): Receive = LoggingReceive {
     case CancelCheckout =>
       log.debug("Canceling checkout (becoming nonEmpty)")
+      checkoutActor ! Checkout.CancelCheckout
       context become nonEmpty(cart, scheduleTimer)
 
     case CloseCheckout =>
