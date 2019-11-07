@@ -1,6 +1,6 @@
 package EShop.lab3
 
-import EShop.lab2.{CartActor, Checkout}
+import EShop.lab2.{CartActor, CartFSM, Checkout}
 import EShop.lab3.OrderManager._
 import akka.actor.{ActorRef, FSM}
 
@@ -13,7 +13,7 @@ class OrderManagerFSM extends FSM[State, Data] {
 
   when(Uninitialized) {
     case Event(AddItem(i), Empty) =>
-      val cartActor = context.system.actorOf(CartActor.props())
+      val cartActor = context.system.actorOf(CartFSM.props())
       cartActor ! CartActor.AddItem(i)
       sender() ! Done
       goto(Open).using(CartData(cartActor))
