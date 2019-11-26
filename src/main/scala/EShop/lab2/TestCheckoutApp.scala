@@ -18,7 +18,6 @@ object TestCheckoutApp extends App {
   checkoutActor ! CancelCheckout
   checkoutActor ! CancelCheckout
 
-
   val checkoutFSMActor = system.actorOf(Props[CheckoutFSM], "checkoutFSMActor")
 
   checkoutFSMActor ! StartCheckout

@@ -19,7 +19,6 @@ object TestCartActorsApp extends App {
   cartActor ! StartCheckout
   cartActor ! CloseCheckout
 
-
   val cartFSMActor = system.actorOf(Props[CartFSM], "cartFSMActor")
 
   cartFSMActor ! AddItem("chleb")

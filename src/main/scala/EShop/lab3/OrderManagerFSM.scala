@@ -4,7 +4,6 @@ import EShop.lab2.{CartActor, CartFSM, Checkout}
 import EShop.lab3.OrderManager._
 import akka.actor.{ActorRef, FSM}
 
-
 class OrderManagerFSM extends FSM[State, Data] {
 
   import OrderManager._
@@ -36,7 +35,7 @@ class OrderManagerFSM extends FSM[State, Data] {
   }
 
   when(InCheckout) {
-    case Event(CartActor.CheckoutStarted(checkoutRef), CartDataWithSender(_, senderRef)) =>
+    case Event(CartActor.CheckoutStarted(checkoutRef, _), CartDataWithSender(_, senderRef)) =>
       senderRef ! Done
       stay.using(InCheckoutData(checkoutRef))
 
