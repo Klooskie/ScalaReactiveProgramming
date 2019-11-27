@@ -60,7 +60,9 @@ class CartTest
     testCartActor ! AddItem("jajka")
     testCartActor ! AddItem("pomidory")
 
-    (testCartActor ? CartActor.GetItems).mapTo[Seq[Any]].futureValue shouldBe Seq[Any]("chleb", "ser", "jajka", "pomidory")
+    (testCartActor ? CartActor.GetItems)
+      .mapTo[Seq[Any]]
+      .futureValue shouldBe Seq[Any]("chleb", "ser", "jajka", "pomidory")
   }
 
   it should "be empty after adding and removing the same item" in {
@@ -84,4 +86,3 @@ class CartTest
     expectMsg(inCheckoutMsg)
   }
 }
-

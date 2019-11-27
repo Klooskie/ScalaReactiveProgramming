@@ -10,7 +10,6 @@ import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
 import scala.concurrent.duration._
 
-
 class CheckoutTest
   extends TestKit(ActorSystem("CheckoutTest"))
   with FlatSpecLike
