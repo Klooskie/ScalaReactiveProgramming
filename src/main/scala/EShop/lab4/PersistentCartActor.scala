@@ -27,38 +27,36 @@ class PersistentCartActor(
   override def receiveCommand: Receive = empty
 
   private def updateState(event: Event, timer: Option[Cancellable] = None): Unit = {
-    event match {
-      case CartExpired | CheckoutClosed =>
-        log.debug("Time out or Checkout closed (becoming empty)")
-        context become empty
+    context.become(
+      event match {
+        case CartExpired | CheckoutClosed =>
+          empty
 
-      case CheckoutCancelled(cart) =>
-        log.debug("Canceling checkout (becoming nonEmpty)")
-        context become nonEmpty(cart, scheduleTimer)
+        case CheckoutCancelled(cart) =>
+          nonEmpty(cart, scheduleTimer)
 
-      case ItemAdded(item, cart) =>
-        if (timer.isDefined)
-          timer.get.cancel()
-        context become nonEmpty(cart.addItem(item), scheduleTimer) //TODO mozliwe ze timer.getOrElse(scheduleTimer)
+        case ItemAdded(item, cart) =>
+          if (timer.isDefined)
+            timer.get.cancel()
+          nonEmpty(cart.addItem(item), scheduleTimer)
 
-      case CartEmptied =>
-        if (timer.isDefined)
-          timer.get.cancel()
-        log.debug("Item removed from the cart")
-        context become empty
+        case CartEmptied =>
+          if (timer.isDefined)
+            timer.get.cancel()
+          empty
 
-      case ItemRemoved(item, cart) =>
-        log.debug("Item " + item + " removed from the cart (becoming non empty)")
-        if (timer.isDefined)
-          timer.get.cancel()
-        context become nonEmpty(cart.removeItem(item), scheduleTimer) //TODO mozliwe ze timer.getOrElse(scheduleTimer)
+        case ItemRemoved(item, cart) =>
+          if (timer.isDefined)
+            timer.get.cancel()
+          nonEmpty(cart.removeItem(item), scheduleTimer)
 
-      case CheckoutStarted(checkoutRef, cart) =>
-        if (timer.isDefined)
-          timer.get.cancel()
-        checkoutRef ! Checkout.StartCheckout
-        context become inCheckout(cart)
-    }
+        case CheckoutStarted(checkoutRef, cart) =>
+          if (timer.isDefined)
+            timer.get.cancel()
+          checkoutRef ! Checkout.StartCheckout
+          inCheckout(cart)
+      }
+    )
   }
 
   def empty: Receive = LoggingReceive {
@@ -96,11 +94,9 @@ class PersistentCartActor(
     case StartCheckout =>
       log.debug("Starting checkout (becoming inCheckout)")
       val checkoutActor = context.system.actorOf(Checkout.props(self))
-      sender() ! CheckoutStarted(checkoutActor, cart)
       persist(CheckoutStarted(checkoutActor, cart)) { event =>
-        {
-          updateState(event, Some(timer))
-        }
+        sender() ! CheckoutStarted(checkoutActor, cart)
+        updateState(event, Some(timer))
       }
 
     case ExpireCart =>
@@ -125,6 +121,6 @@ class PersistentCartActor(
   }
 
   override def receiveRecover: Receive = LoggingReceive {
-    case evt: Event => updateState(evt)
+    case event: Event => updateState(event)
   }
 }
