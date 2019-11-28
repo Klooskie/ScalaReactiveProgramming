@@ -34,9 +34,7 @@ class PersistentCheckout(
           selectingDelivery(scheduler.scheduleOnce(timerDuration, self, ExpireCheckout))
 
         case DeliveryMethodSelected(method) =>
-          if (maybeTimer.isDefined)
-            maybeTimer.get.cancel()
-          selectingPaymentMethod(scheduler.scheduleOnce(timerDuration, self, ExpireCheckout))
+          selectingPaymentMethod(maybeTimer.getOrElse(scheduler.scheduleOnce(timerDuration, self, ExpireCheckout)))
 
         case CheckOutClosed =>
           if (maybeTimer.isDefined)
@@ -83,9 +81,8 @@ class PersistentCheckout(
   def selectingPaymentMethod(timer: Cancellable): Receive = LoggingReceive {
     case SelectPayment(payment) =>
       val paymentActor = context.system.actorOf(Payment.props(payment, sender(), self))
-      persist(PaymentStarted(paymentActor)) {
-        sender() ! PaymentStarted(paymentActor)
-        event =>
+      persist(PaymentStarted(paymentActor)) { event =>
+          sender() ! PaymentStarted(paymentActor)
           updateState(event, Some(timer))
       }
 

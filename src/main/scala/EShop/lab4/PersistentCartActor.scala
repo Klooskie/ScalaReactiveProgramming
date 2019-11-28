@@ -36,9 +36,7 @@ class PersistentCartActor(
           nonEmpty(cart, scheduleTimer)
 
         case ItemAdded(item, cart) =>
-          if (timer.isDefined)
-            timer.get.cancel()
-          nonEmpty(cart.addItem(item), scheduleTimer)
+          nonEmpty(cart.addItem(item), timer.getOrElse(scheduleTimer))
 
         case CartEmptied =>
           if (timer.isDefined)
@@ -46,9 +44,7 @@ class PersistentCartActor(
           empty
 
         case ItemRemoved(item, cart) =>
-          if (timer.isDefined)
-            timer.get.cancel()
-          nonEmpty(cart.removeItem(item), scheduleTimer)
+          nonEmpty(cart.removeItem(item), timer.getOrElse(scheduleTimer))
 
         case CheckoutStarted(checkoutRef, cart) =>
           if (timer.isDefined)
