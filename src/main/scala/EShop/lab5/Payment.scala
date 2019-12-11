@@ -44,10 +44,6 @@ class Payment(
       case _: PaymentClientError | _: StreamTcpException =>
         notifyAboutRejection()
         Stop
-
-
-//        ClientError(), CustomStatusCode(), Informational(), Redirection(), ServerError(), Success
-
     }
 
   //please use this one to notify when supervised actor was stoped
