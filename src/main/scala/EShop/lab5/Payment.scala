@@ -30,7 +30,7 @@ class Payment(
 
   override def receive: Receive = {
     case DoPayment =>
-      context.actorOf(PaymentService.props(method, self))
+      context.watch(context.actorOf(PaymentService.props(method, self)))
     case PaymentSucceeded =>
       orderManager ! PaymentConfirmed
       checkout ! ReceivePayment

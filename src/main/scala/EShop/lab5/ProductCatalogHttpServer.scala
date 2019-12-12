@@ -12,8 +12,8 @@ import scala.concurrent.duration._
 
 class ProductCatalogHttpServer(actorSystem: ActorSystem) extends HttpApp with JsonSupport {
   implicit val itemFormat: RootJsonFormat[ProductCatalog.Item] = jsonFormat5(ProductCatalog.Item)
-  implicit val itemsFormat: RootJsonFormat[Items]              = jsonFormat1(ProductCatalog.Items)
-  implicit val getItemsFormat: RootJsonFormat[GetItems]        = jsonFormat2(ProductCatalog.GetItems)
+  implicit val itemsFormat: RootJsonFormat[Items] = jsonFormat1(ProductCatalog.Items)
+  implicit val getItemsFormat: RootJsonFormat[GetItems] = jsonFormat2(ProductCatalog.GetItems)
 
   // ask timeout
   implicit val timeout: Timeout = 5.seconds
